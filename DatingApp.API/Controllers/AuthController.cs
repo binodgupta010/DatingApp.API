@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using AutoMapper;
 
 namespace DatingApp.API.Controllers
 {
@@ -21,9 +22,13 @@ namespace DatingApp.API.Controllers
     {
         private readonly IAuthRepository _authRepositry;
         private readonly IConfiguration _config;
-        public AuthController(IAuthRepository authRepositry, IConfiguration config)
+        private readonly IMapper _mapper;
+
+        public AuthController(IAuthRepository authRepositry, IConfiguration config ,
+          IMapper mapper)
         {
             this._config = config;
+            this._mapper = mapper;
             this._authRepositry = authRepositry;
         }
 
@@ -47,10 +52,10 @@ namespace DatingApp.API.Controllers
         }
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> Login(UserForLoginDto user)
+        public async Task<IActionResult> Login(UserForLoginDto userForLoginDto)
         {
            
-            var userFromRepo = await _authRepositry.Login(user.UserName.ToLower(), user.Password);
+            var userFromRepo = await _authRepositry.Login(userForLoginDto.UserName.ToLower(), userForLoginDto.Password);
             if (userFromRepo == null)
                 return Unauthorized();
 
@@ -74,8 +79,12 @@ namespace DatingApp.API.Controllers
             var tokenHandler = new JwtSecurityTokenHandler();
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
-
-            return Ok(new { token = tokenHandler.WriteToken(token) });
+            var user = _mapper.Map<UserForListDto>(userFromRepo);
+            return Ok(new 
+            {
+                 token = tokenHandler.WriteToken(token),
+                 user
+            });
         }
     }
 }
