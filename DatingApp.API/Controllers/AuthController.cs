@@ -17,7 +17,7 @@ namespace DatingApp.API.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+   
     public class AuthController : ControllerBase
     {
         private readonly IAuthRepository _authRepositry;
@@ -32,7 +32,7 @@ namespace DatingApp.API.Controllers
             this._authRepositry = authRepositry;
         }
 
-        [AllowAnonymous]
+       
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserForRegistrationDto user)
         {
@@ -40,17 +40,16 @@ namespace DatingApp.API.Controllers
             if (await _authRepositry.UserExist(user.UserName))
                 return BadRequest("User alresdy Exist");
 
-            var userToCreate = new User
-            {
-                UserName = user.UserName
-            };
+            var userToCreate = _mapper.Map<User>(user);
 
             var createdUser = _authRepositry.Register(userToCreate, user.Password);
 
+            //var userToReturn = _mapper.Map<UserForDetailDto>(createdUser);
 
-            return StatusCode(201);
+            return CreatedAtRoute("GetUser", new { Controller="User" ,
+                             id= createdUser.Id}, createdUser );
         }
-        [AllowAnonymous]
+        
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserForLoginDto userForLoginDto)
         {
